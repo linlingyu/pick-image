@@ -46,7 +46,12 @@ export function App(): JSX.Element {
 
     function onCleanToCopy() {
         setLoading(true);
+        setVisible(false);
         fs.removeSync(targetPath);
+        copyJPG();
+    }
+    function onCopy() {
+        setVisible(false);
         copyJPG();
     }
 
@@ -64,7 +69,6 @@ export function App(): JSX.Element {
             content: '复制完成'
         });
         setLoading(false);
-        setVisible(false);
     }
 
     return <>
@@ -97,7 +101,7 @@ export function App(): JSX.Element {
             onCancel={() => setVisible(false)}
             footer={[
                 <Button loading={loading} danger type="primary" onClick={onCleanToCopy}>清空复制</Button>,
-                <Button loading={loading} type="primary" onClick={copyJPG}>追加复制</Button>,
+                <Button loading={loading} type="primary" onClick={onCopy}>追加复制</Button>,
                 <Button loading={loading} onClick={() => setVisible(false)}>取消</Button>
             ]}
         >
