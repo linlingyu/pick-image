@@ -48,7 +48,6 @@ export function App(): JSX.Element {
         setLoading(true);
         fs.removeSync(targetPath);
         copyJPG();
-        setVisible(false);
     }
 
     function copyJPG() {
@@ -65,6 +64,7 @@ export function App(): JSX.Element {
             content: '复制完成'
         });
         setLoading(false);
+        setVisible(false);
     }
 
     return <>
