@@ -11,7 +11,7 @@ export const event = {
                 defaultPath: path.join(os.homedir(), 'Pictures'),
                 properties: ['openDirectory', 'multiSelections']
             }).then((value: OpenDialogReturnValue) => {
-                event.returnValue = value.filePaths;
+                event.reply('BROWSE_SOURCE-REPLY', {directories: value.filePaths});
             });
         });
         // 

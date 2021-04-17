@@ -1,22 +1,32 @@
 import path from "path";
 import os from "os";
 import fs from "fs-extra";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Form, Button, Tag, List, Modal } from "antd";
+import {nanoid} from "nanoid";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import "antd/dist/antd.dark.css";
 import style from "./assets/less/app.less";
-import { ipcRenderer } from "electron";
+import { ipcRenderer, IpcRendererEvent } from "electron";
 // 
 export function App(): JSX.Element {
     const [sourcePaths, setSourcePaths] = useState<string[]>([]),
         [targetPath, setTargetPath] = useState<string>(path.join(os.homedir(), 'Desktop', 'pic')),
+        [listLoading, setListLoading] = useState<boolean>(false),
         [loading, setLoading] = useState<boolean>(false),
         [visible, setVisible] = useState<boolean>(false);
     // 
+    useEffect(() => {
+        ipcRenderer.on('BROWSE_SOURCE-REPLY', (event: IpcRendererEvent, {directories}) => {
+            setSourcePaths(directories);
+            setListLoading(false);
+        });
+        // 
+    }, []);
+    // 
     function onBrowse() {
-        const filePaths: string[] = ipcRenderer.sendSync('BROWSE_SOURCE');
-        setSourcePaths(filePaths);
+        setListLoading(true);
+        ipcRenderer.send('BROWSE_SOURCE');
     }
 
     function onChangeTarget() {
@@ -26,7 +36,7 @@ export function App(): JSX.Element {
         }
         setTargetPath(filePath);
     }
-
+    // 
     function onSubmit(values: any) {
         if (!sourcePaths.length) {
             Modal.error({
@@ -44,31 +54,37 @@ export function App(): JSX.Element {
         copyJPG();
     }
 
-    function onCleanToCopy() {
+    async function onCopy(type: number) {
+        setVisible(false);
         setLoading(true);
-        setVisible(false);
-        fs.removeSync(targetPath);
-        copyJPG();
-    }
-    function onCopy() {
-        setVisible(false);
-        copyJPG();
+        if (type === 1) { // 清空复制
+            await fs.remove(targetPath);
+        }
+        return copyJPG();
     }
 
-    function copyJPG() {
+    async function copyJPG() {
         setLoading(true);
+        // 
         let files: string[] = [];
-        sourcePaths.forEach((dir: string) => {
-            files = files.concat(fs.readdirSync(dir).filter((fileName: string) => fileName.match(/\.jpg$/i)).map((fileName: string) => path.join(dir, fileName)));
+        for(let i = 0; i < sourcePaths.length; i++) {
+            const directory: string = sourcePaths[i],
+                fileList: string[] = await fs.readdir(directory);
+            files = files.concat(fileList.map((fileName: string) => path.join(directory, fileName)));
+        }
+        // 
+        files = files.filter((filePath: string) => filePath.match(/\.jpg$/i));
+        const promiseArray: Promise<any>[] = files.map((filePath: string) => {
+            return fs.copy(filePath, path.join(targetPath, path.basename(filePath)));
         });
-        files.forEach((filePath: string) => {
-            fs.copySync(filePath, path.join(targetPath, path.basename(filePath)));
-        });
-        Modal.success({
-            title: 'Success',
-            content: '复制完成'
-        });
-        setLoading(false);
+        return Promise.all(promiseArray)
+            .then(() => {
+                Modal.success({
+                    title: 'Success',
+                    content: '复制完成'
+                });
+                setLoading(false);
+            });
     }
 
     return <>
@@ -81,6 +97,7 @@ export function App(): JSX.Element {
                 <List
                     bordered
                     size="small"
+                    loading={listLoading}
                     dataSource={sourcePaths}
                     renderItem={(item: string) => <List.Item>{item}</List.Item>}
                 />
@@ -100,9 +117,9 @@ export function App(): JSX.Element {
             visible={visible}
             onCancel={() => setVisible(false)}
             footer={[
-                <Button loading={loading} danger type="primary" onClick={onCleanToCopy}>清空复制</Button>,
-                <Button loading={loading} type="primary" onClick={onCopy}>追加复制</Button>,
-                <Button loading={loading} onClick={() => setVisible(false)}>取消</Button>
+                <Button key={nanoid(8)} loading={loading} danger type="primary" onClick={() => onCopy(1)}>清空复制</Button>,
+                <Button key={nanoid(8)} loading={loading} type="primary" onClick={() => onCopy(2)}>追加复制</Button>,
+                <Button key={nanoid(8)} loading={loading} onClick={() => setVisible(false)}>取消</Button>
             ]}
         >
             <p>目标目录存在文件，请做选择！</p>
