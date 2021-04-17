@@ -21,5 +21,5 @@ app.whenReady().then(() => {
     menu.initialize();
     // win.loadFile(path.join(app.getAppPath(), 'out', 'electron-browser', 'index.html'));
     win.loadFile(path.join(__dirname, 'electron-browser', 'index.html'));
-    win.webContents.openDevTools();
+    // win.webContents.openDevTools();
 });
