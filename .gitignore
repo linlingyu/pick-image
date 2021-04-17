@@ -1,0 +1,6 @@
+out
+build
+libstudio.dylib
+node_modules
+package-lock.json
+.DS_Store
