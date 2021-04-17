@@ -1,12 +1,12 @@
 module.exports = {
     appId: 'com.english-table.app',
-    productName: 'English Table',
+    productName: 'Pick Image',
     directories: {
         app: '.',
         output: 'build'
     },
     mac: {
-        icon: './assets/english-table.png',
+        icon: './assets/pick-image.png',
         target: 'dmg'
     },
     dmg: {
